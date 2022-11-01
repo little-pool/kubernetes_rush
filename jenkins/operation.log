@@ -79,3 +79,7 @@ docker push hansu/nginx-demo:latest
 kubectl apply -f middle.yaml
 sleep 20
 kubectl apply -f app.yaml
+
+# Account
+jenkins: admin/admin
+gitlab: root/C1sc0@123
