@@ -1,0 +1,118 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gitlab
+  namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+spec:
+  rules:
+  - host: gitlab.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service: 
+            name: gitlab
+            port:
+              number: 80
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: gitlabdb
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab
+  labels:
+    app: gitlab
+  namespace: default
+spec:
+  ports:
+  - name: server
+    port: 80
+    targetPort: 80
+    protocol: TCP
+  selector:
+    app: gitlab
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  name: gitlab
+  labels:
+    app: gitlab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitlab
+  template:
+    metadata:
+      labels:
+        app: gitlab
+    spec:
+      tolerations:
+      - operator: "Exists"
+      containers:
+      - name: gitlab
+        image:  sameersbn/gitlab:13.2.2
+        imagePullPolicy: "IfNotPresent"
+        env:
+        - name: GITLAB_HOST
+          value: "gitlab.luffy.com"
+        - name: GITLAB_PORT
+          value: "80"
+        - name: GITLAB_SECRETS_DB_KEY_BASE
+          value: "long-and-random-alpha-numeric-string"
+        - name: GITLAB_SECRETS_DB_KEY_BASE
+          value: "long-and-random-alpha-numeric-string"
+        - name: GITLAB_SECRETS_SECRET_KEY_BASE
+          value: "long-and-random-alpha-numeric-string"
+        - name: GITLAB_SECRETS_OTP_KEY_BASE
+          value: "long-and-random-alpha-numeric-string"
+        - name: DB_HOST
+          value: "postgres"
+        - name: DB_NAME
+          value: "gitlab"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-secret
+              key: postgres.user.root
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: gitlab-secret
+              key: postgres.pwd.root
+        - name: REDIS_HOST
+          value: "redis"
+        - name: REDIS_PORT
+          value: "6379"
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 5048Mi
+          requests:
+            cpu: 100m
+            memory: 500Mi
+        volumeMounts:
+        - mountPath: /home/git/data
+          name: data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: gitlabdb
