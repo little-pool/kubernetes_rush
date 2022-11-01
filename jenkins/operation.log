@@ -66,3 +66,16 @@ root@k8s3:/mnt$cat /etc/exports
 /mnt/postgres   10.124.148.144/24(rw,sync,no_subtree_check,no_root_squash)
 /mnt/postgres   10.124.148.145/24(rw,sync,no_subtree_check,no_root_squash)
 /mnt/postgres   10.124.148.146/24(rw,sync,no_subtree_check,no_root_squash)
+
+
+# Jenkins config
+
+#!/bin/bash
+export KUBECONFIG=/etc/kubernetes/admin.conf
+cd test
+git pull
+docker build -t hansu/nginx-demo:latest .
+docker push hansu/nginx-demo:latest
+kubectl apply -f middle.yaml
+sleep 20
+kubectl apply -f app.yaml

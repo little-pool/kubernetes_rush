@@ -36,7 +36,7 @@ metadata:
 spec:
   selector:
     app: nginx-demo
-  #type: NodePort
+  type: NodePort
   ports:
   - name: web
     port: 80
